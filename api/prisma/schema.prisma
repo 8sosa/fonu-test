@@ -1,0 +1,94 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// --- ENUMS (Strict allowed values based on the assignment) ---
+enum Role {
+  ADMIN
+  USER
+}
+
+enum KycStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum Plan {
+  BASIC
+  PRO
+  BUSINESS
+}
+
+enum SubStatus {
+  INACTIVE
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}
+
+// --- MODELS (The "Nouns" of Fonu) ---
+
+model User {
+  id           String         @id @default(uuid())
+  email        String         @unique
+  password     String         // Hashed password
+  role         Role           @default(USER)
+  
+  // Customer Profile fields
+  name         String
+  phone        String?
+  address      String?
+  
+  // Relations
+  kyc          KycRecord?     // 1-to-1 relation
+  subscriptions Subscription[] // 1-to-Many relation
+  
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+}
+
+model KycRecord {
+  id              String    @id @default(uuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  status          KycStatus @default(PENDING)
+  documentType    String
+  documentNumber  String
+  dateSubmitted   DateTime  @default(now())
+  notes           String?
+  rejectionReason String?   // Admin can add this on rejection
+  
+  updatedAt       DateTime  @updatedAt
+}
+
+model Subscription {
+  id           String    @id @default(uuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  plan         Plan
+  amount       Int       // Stored in kobo (e.g., 500000 = 5000 Naira)
+  currency     String    @default("NGN")
+  status       SubStatus @default(INACTIVE)
+  
+  startDate    DateTime  @default(now())
+  renewalDate  DateTime? // Set when webhook activates it
+  
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model WebhookEvent {
+  id        String   @id @default(uuid())
+  type      String   // e.g., "payment.success", "payment.failed"
+  payload   Json     // Stores the exact JSON sent by the payment provider
+  processed Boolean  @default(false) // Helps track if we successfully handled it
+  
+  createdAt DateTime @default(now())
+}

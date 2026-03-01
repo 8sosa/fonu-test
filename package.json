@@ -1,0 +1,8 @@
+{
+  "devDependencies": {
+    "@types/node": "^25.3.3"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.4.2"
+  }
+}

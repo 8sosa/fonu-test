@@ -133,7 +133,7 @@ describe('Fintech Portal Requirements Verification', () => {
       data: {
         userId: testCustomerId,
         plan: 'BASIC',
-        amount: 500000,
+        amount: 50000,
         status: 'INACTIVE'
       }
     });

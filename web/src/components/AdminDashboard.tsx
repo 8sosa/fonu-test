@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import api from '../api/client';
 import { SubscriptionModal } from './SubscriptionModal';
 
@@ -9,14 +9,18 @@ export const AdminDashboard = () => {
   const [search, setSearch] = useState('');
   const [viewMode, setViewMode] = useState<'table' | 'json'>('table');
 
-  const fetchCustomers = async () => {
+  const fetchCustomers = useCallback(async () => {
     try {
       const { data } = await api.get(`/customers?search=${search}`);
       setCustomers(data);
-    } catch (err) { console.error(err); }
-  };
-
-  useEffect(() => { fetchCustomers(); }, []);
+    } catch (err) { 
+      console.error(err); 
+    }
+  }, [search]); // Add 'search' as a dependency here
+  
+  useEffect(() => { 
+    fetchCustomers(); 
+  }, [fetchCustomers]);
 
   const [events, setEvents] = useState<any[]>([]);
 

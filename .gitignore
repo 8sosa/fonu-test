@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+dist/
+build/
+.eslintcache
+
+# Environment
+.env
+.env.local
+.env.test
+
+# Docker
+.docker/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db

@@ -6,13 +6,15 @@ export const handlePaymentWebhook = async (req: Request, res: Response) => {
   const secret = process.env.WEBHOOK_SECRET || 'fonu_secret_123';
   const signature = req.headers['x-fonu-signature'];
 
-  // 1. Validate Signature (Requirement 5: Security)
-  const hash = crypto.createHmac('sha256', secret)
-    .update(JSON.stringify(req.body))
-    .digest('hex');
+  // 1. Validate Signature using the RAW body
+  // We use req.rawBody if it exists, otherwise fall back to stringify
+  const bodyToVerify = (req as any).rawBody || JSON.stringify(req.body);
 
-    console.log("Calculated:", hash)
-    console.log("Received:", signature)
+  const hash = crypto.createHmac('sha256', secret)
+    .update(bodyToVerify)
+    .digest('hex')
+  ;
+
   if (signature !== hash) {
     return res.status(401).json({ error: 'Invalid signature' });
   }

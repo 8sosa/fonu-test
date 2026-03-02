@@ -4,8 +4,6 @@ import prisma from './db';
 import cors from 'cors';
 import authRoutes from './routes/auth.routes';
 import customerRoutes from './routes/customer.routes';
-import { handlePaymentWebhook } from './controllers/webhook.controller';
-import { authorize } from './middleware/role.middleware';
 import webhookRoutes from './routes/webhook.routes';
 
 const app = express();
@@ -17,7 +15,11 @@ app.use(cors({
 }));
 
 // 2. Body Parser: CRITICAL for reading emails/passwords from req.body
-app.use(express.json()); 
+app.use(express.json({
+  verify: (req: any, res, buf) => {
+    req.rawBody = buf; // Store the original bytes
+  }
+}));
 
 // 3. Simple Health Check
 app.get('/health', async (req, res) => {
@@ -45,7 +47,6 @@ app.get('/health', async (req, res) => {
 // Example: router.post('/login') becomes POST http://localhost:3000/auth/login
 app.use('/auth', authRoutes);
 app.use('/customers', customerRoutes);
-app.post('/webhooks/payments', handlePaymentWebhook);
 app.use('/webhooks', webhookRoutes);
 
 if (process.env.NODE_ENV !== 'test') {

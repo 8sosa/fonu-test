@@ -5,6 +5,7 @@ import { SubscriptionModal } from './SubscriptionModal';
 export const AdminDashboard = () => {
   const [customers, setCustomers] = useState<any[]>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+  const [viewingCustomer, setViewingCustomer] = useState<any | null>(null);
   const [search, setSearch] = useState('');
   const [viewMode, setViewMode] = useState<'table' | 'json'>('table');
 
@@ -83,14 +84,18 @@ export const AdminDashboard = () => {
           <table className="min-w-full divide-y divide-gray-100">
             <thead className="bg-gray-50/50">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Customer</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Email & ID</th>
                 <th className="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">KYC Status</th>
                 <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {customers.map((user) => (
-                <tr key={user.id} className="hover:bg-indigo-50/30 transition-colors">
+                <tr key={user.id} className="hover:bg-indigo-50/30 transition-colors" onClick={() => setViewingCustomer(user)}>
+                  <td className="px-6 py-5 whitespace-nowrap">
+                    <span className="text-sm font-semibold text-gray-900">{user.name}</span>
+                  </td>
                   <td className="px-6 py-5 whitespace-nowrap">
                     <div className="flex flex-col">
                       <span className="text-sm font-semibold text-gray-900">{user.email}</span>
@@ -221,7 +226,7 @@ export const AdminDashboard = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right font-mono text-sm font-bold text-gray-900">
-                        ₦{(displayAmount).toLocaleString()}
+                        ₦{(displayAmount / 10).toLocaleString()}
                       </td>
                     </tr>
                   );
@@ -252,6 +257,24 @@ export const AdminDashboard = () => {
           )}
         </div>
   
+        {/* 1. The Detail Sidepanel */}
+        {viewingCustomer && (
+          <div 
+            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 transition-opacity"
+            onClick={() => setViewingCustomer(null)}
+          />
+        )}
+        <CustomerDetailSidepanel 
+          customer={viewingCustomer} 
+          onClose={() => setViewingCustomer(null)} 
+          onAction={(type: 'approve' | 'reject', id: string) => {
+            if (type === 'approve') handleApprove(id);
+            if (type === 'reject') handleReject(id);
+            setViewingCustomer(null); // Close panel after action
+          }}
+        />
+
+        {/* 2. The Subscription Modal */}
         {selectedCustomerId && (
           <SubscriptionModal 
             customerId={selectedCustomerId} 
@@ -259,6 +282,116 @@ export const AdminDashboard = () => {
             onSuccess={fetchCustomers}
           />
         )}
+      </div>
+    </div>
+  );
+};
+
+const CustomerDetailSidepanel = ({ customer, onClose, onAction }: any) => {
+  if (!customer) return null;
+
+  return (
+    <div className="fixed inset-y-0 right-0 w-full max-w-md bg-white shadow-2xl z-50 p-8 border-l border-gray-100 overflow-y-auto animate-in slide-in-from-right duration-300">
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h2 className="text-xl font-bold text-gray-900">Customer Profile</h2>
+          <p className="text-xs text-gray-400 font-mono mt-1">ID: {customer.id}</p>
+        </div>
+        <button 
+          onClick={onClose} 
+          className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-black transition-colors"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div className="space-y-8">
+        {/* Profile Header Card */}
+        <div className="p-5 bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-3xl text-white shadow-lg shadow-indigo-100">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-70 mb-1">Full Name</p>
+          <p className="text-xl font-bold mb-4">{customer.name || 'Not Provided'}</p>
+          
+          <div className="space-y-2 opacity-90">
+             <p className="text-xs flex items-center gap-2">
+               <span className="w-4 h-4 flex items-center justify-center bg-white/20 rounded">✉</span>
+               {customer.email}
+             </p>
+          </div>
+        </div>
+
+        {/* Contact & Logistics Section */}
+        <div className="space-y-4">
+          <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400">Contact & Logistics</h3>
+          <div className="grid grid-cols-1 gap-4">
+            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+              <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Phone Number</p>
+              <p className="text-sm font-semibold text-gray-900">{customer.phone || 'No phone recorded'}</p>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+              <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Primary Address</p>
+              <p className="text-sm font-semibold text-gray-900 leading-relaxed">
+                {customer.address || 'No address on file'}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* KYC Actions Section (Keep your existing pending logic here) */}
+        {customer.kyc?.status === 'PENDING' && (
+          <div className="bg-amber-50 p-5 rounded-2xl border border-amber-100 shadow-sm shadow-amber-50">
+            <p className="text-sm text-amber-800 font-bold mb-3 flex items-center gap-2">
+              <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span>
+              Verification Required
+            </p>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => onAction('approve', customer.id)}
+                className="flex-1 bg-green-600 text-white py-3 rounded-xl text-sm font-bold hover:bg-green-700 transition-all shadow-md shadow-green-100"
+              >
+                Approve
+              </button>
+              <button 
+                onClick={() => onAction('reject', customer.id)}
+                className="flex-1 bg-white text-red-600 border border-red-200 py-3 rounded-xl text-sm font-bold hover:bg-red-50 transition-all"
+              >
+                Reject
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Identity Documents Deep Dive */}
+        <div className="border-t border-gray-100 pt-6">
+          <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-4">Identity Documents</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+              <p className="text-[10px] text-gray-400 font-bold uppercase">Type</p>
+              <p className="text-xs font-bold text-slate-700">{customer.kyc?.documentType || 'N/A'}</p>
+            </div>
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+              <p className="text-[10px] text-gray-400 font-bold uppercase">Number</p>
+              <p className="text-xs font-mono font-bold text-slate-700">{customer.kyc?.documentNumber || 'N/A'}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Subscription History */}
+        <div className="border-t pt-6">
+          <h3 className="font-bold mb-4">Subscription Status</h3>
+          {customer.subscriptions?.length > 0 ? (
+            customer.subscriptions.map((sub: any) => (
+              <div key={sub.id} className="flex justify-between items-center bg-gray-50 p-3 rounded-lg mb-2">
+                <div>
+                  <p className="font-bold text-sm">{sub.plan}</p>
+                  <p className="text-[10px] text-gray-400 uppercase tracking-widest">{sub.status}</p>
+                </div>
+                <p className="font-mono text-sm font-bold">₦{(sub.amount).toLocaleString()}</p>
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-gray-400 italic">No subscriptions found.</p>
+          )}
+        </div>
       </div>
     </div>
   );

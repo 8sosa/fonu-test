@@ -1,0 +1,81 @@
+name: Fonu Fintech CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+
+    # This spins up a real Postgres instance in the GitHub cloud for your tests
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: admin
+          POSTGRES_PASSWORD: password123
+          POSTGRES_DB: fonu_db_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: ./api/package-lock.json
+
+      - name: Install Backend Dependencies
+        working-directory: ./api
+        run: npm install
+
+      - name: Generate Prisma Client
+        working-directory: ./api
+        run: npx prisma generate
+
+      - name: Run Database Migrations
+        working-directory: ./api
+        run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: postgresql://admin:password123@localhost:5432/fonu_db_test
+
+      - name: Run Backend Tests
+        working-directory: ./api
+        run: npm test
+        env:
+          # Use localhost here because GitHub Services map the container port to the runner's localhost
+          DATABASE_URL: postgresql://admin:password123@localhost:5432/fonu_db_test
+          JWT_SECRET: super_secret_jwt_key
+          WEBHOOK_SECRET: fonu_secret_123
+          NODE_ENV: test
+
+  frontend-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: ./web/package-lock.json
+
+      - name: Install Frontend Dependencies
+        working-directory: ./web
+        run: npm install
+
+      - name: Lint Frontend
+        working-directory: ./web
+        run: npm run lint

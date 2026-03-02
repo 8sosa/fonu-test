@@ -29,6 +29,7 @@ services:
       - DOCKER_ENV=true
       - DATABASE_URL=postgresql://admin:password123@db:5432/fonu_db?schema=public
       - JWT_SECRET=super_secret_jwt_key
+      - WEBHOOK_SECRET='fonu_secret_123'
     volumes:
       # ONLY mount the src folder. 
       # This keeps the container's internal node_modules and config safe!

@@ -99,7 +99,7 @@ export const CustomerPortal = () => {
         fetchProfile();
         setIsPaying(null);
       }, 1500);
-    } catch (err) {
+    } catch {
       alert("Payment simulation failed.");
       setIsPaying(null);
     }

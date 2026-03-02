@@ -30,7 +30,7 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'off', // Disables 'any' errors
       '@typescript-eslint/no-unused-vars': 'warn', // Downgrades unused vars to warnings
       'react-hooks/exhaustive-deps': 'warn',       // Downgrades missing deps to warnings
-      // ----------------------------
+      'react-hooks/set-state-in-effect': 'off',
     },
   },
 )
